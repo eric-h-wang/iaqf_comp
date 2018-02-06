@@ -23,20 +23,21 @@ def Port1(data):
     
 def Port2(data):
     expiry1 = 90/365
-    expiry2 = 89/365
+    data['expiry2'] = (90-(data['Date']-data['Date'].shift(1)).dt.days)/365
+#    expiry2 = 89/365
     
     data['P2_sell'] = 0
     data['P2_buy'] = 0
     
     data.loc[data['lag_pos']==1,'P2_sell'] = bs_call(data['Close'], data['r']/100, 
                                 data['q']/100, data['vol'], 
-                                expiry2, data['Close'].shift(1))
+                                data['expiry2'], data['Close'].shift(1))
     data.loc[data['position']==1, 'P2_buy'] = bs_call(data['Close'], data['r']/100, 
                                 data['q']/100, data['vol'], 
                                 expiry1, data['Close'])
     data.loc[data['lag_pos']==-1, 'P2_sell'] = bs_put(data['Close'], data['r']/100, 
                             data['q']/100, data['vol'], 
-                            expiry2, data['Close'].shift(1))
+                            data['expiry2'], data['Close'].shift(1))
     data.loc[data['position']==-1, 'P2_buy'] = bs_put(data['Close'], data['r']/100, 
                             data['q']/100, data['vol'], 
                             expiry1, data['Close'])
@@ -47,11 +48,11 @@ def Port2(data):
     
 def Port3(data):
     expiry1 = 90/365
-    expiry2 = 89/365
+    data['expiry2'] = (90-(data['Date']-data['Date'].shift(1)).dt.days)/365
     data['straddle3_buy'] = bs_straddle(data['Close'], data['r']/100, data['q']/100,
                                         data['vol'], expiry1, data['Close'])
     data['straddle3_sell'] = bs_straddle(data['Close'],data['r']/100, data['q']/100,
-                                        data['vol'], expiry2, data['Close'].shift(1))
+                                        data['vol'], data['expiry2'], data['Close'].shift(1))
     
     data['P3_daily_return'] = data['straddle3_sell']-data['straddle3_buy'].shift(1)
     data.loc[data['lag_pos']==0, 'P3_daily_return'] = 0
@@ -80,5 +81,6 @@ if __name__ == '__main__':
     data = match_data()
     hist_vol(data, 30)
     Port1(data)
-    Port4(data)
-    data.plot(y=['P1_value', 'P4_value'])
+    Port2(data)
+    print(data['expiry2'].tail())
+    data.plot(y=['P1_value', 'P2_value'])
